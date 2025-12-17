@@ -11,7 +11,11 @@
   "devDependencies": {
     "@types/dotenv": "^6.1.1",
     "@types/express": "^5.0.6",
+    "@types/mongoose": "^5.11.96",
     "express": "^5.2.1",
     "typescript": "^5.9.3"
+  },
+  "dependencies": {
+    "mongoose": "^9.0.1"
   }
 }
