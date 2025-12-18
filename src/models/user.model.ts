@@ -1,0 +1,51 @@
+import mongoose from "mongoose";
+import validator from 'validator';
+import bcrypt from 'bcrypt';
+
+const userSchema = new mongoose.Schema({
+    firstName: {
+        type: String,
+        minLength: [3, 'First name must have a 3 charracters or more'],
+        required: [true, 'User must have a first name'],
+    },
+    lastName: {
+        type: String,
+        minLength: [3, 'First name must have a 3 charracters or more'],
+        required: [true, 'User must have a first name'],
+    },
+    email: {
+        type: String,
+        unique: true,
+        trim: true,
+        validate: [validator.isEmail, 'Please enter real email'],
+        lowercase: true,
+    },
+    phoneNumber: {
+        type: String,
+        required: [true, 'User must have a phonr number'],
+        validate: function (v: string) {
+            return /^\d{10}$/.test(v);
+        }, 
+        message: (prop: any) => `${prop.value} is not a valid 9-digit phone number`
+    },
+    password: {
+        type: String,
+        minLength: [8, 'Password must have a 8 charracters or more'],
+        required: [true, 'User must have a password'],
+    },
+    role: {
+        type: String,
+        enum: ['user', 'agent', 'admin'],
+        default: 'user',
+    },
+});
+
+userSchema.pre('save', async function() {
+    if(!this.isModified('password')) return ;
+
+    this.password = await bcrypt.hash(this.password, 12);
+});
+
+const User = mongoose.model('User', userSchema);
+
+export default User;

@@ -1,9 +1,14 @@
 import mongoose from "mongoose";
 
-const dbURL = String(process.env.DB_URL);
+
 
 export const connectDB = async () => {
     try {
+        const dbURL = String(process.env.DB_URL);
+        
+        if (!dbURL) {
+            throw new Error('DB_URL is not defined in .env');
+        }
         await mongoose.connect(dbURL);
         console.log('Database has been connected.')
     } catch(err) {
