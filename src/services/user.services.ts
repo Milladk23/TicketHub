@@ -24,6 +24,7 @@ const createSendToken = (user: any) => {
 export const signup = async (data: {
     firstName: string,
     lastName: string,
+    username: string,
     phoneNumber: string,
     password: string,
     email?: string,
@@ -31,9 +32,10 @@ export const signup = async (data: {
 }) => {
     if(
         !data.firstName || 
+        !data.lastName ||
+        !data.username || 
         !data.password ||
         !data.passwordConfirm || 
-        !data.lastName ||
         !data.phoneNumber
     ) {
         throw new Error('Please fill all the required fields');
@@ -45,9 +47,27 @@ export const signup = async (data: {
     const user = await User.create({
         firstName: data.firstName,
         lastName: data.lastName,
+        username: data.username,
         phoneNumber: data.phoneNumber,
         password: data.password
     });
+
+    return createSendToken(user);
+}
+
+export const login = async (data: { 
+    username: string,
+    password: string,
+}) => {
+    const user: any = await User.findOne({ username: data.username }).select('+password');
+
+    if(!user) {
+        throw new Error('No user with this username.');
+    }
+
+    if(!(await user.correctPassword(user.password, data.password))) {
+        throw new Error('Wrong password');
+    }
 
     return createSendToken(user);
 }

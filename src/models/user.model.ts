@@ -13,6 +13,12 @@ const userSchema = new mongoose.Schema({
         minLength: [3, 'First name must have a 3 charracters or more'],
         required: [true, 'User must have a first name'],
     },
+    username: {
+        type: String,
+        unique: true,
+        trim: true,
+        required: true,
+    },
     email: {
         type: String,
         unique: true,
@@ -45,6 +51,13 @@ userSchema.pre('save', async function() {
 
     this.password = await bcrypt.hash(this.password, 12);
 });
+
+userSchema.methods.correctPassword = async function(
+    candidatePassword: string,
+    userPassword: string,
+    ){
+    return await bcrypt.compare(userPassword, candidatePassword);
+}
 
 const User = mongoose.model('User', userSchema);
 
