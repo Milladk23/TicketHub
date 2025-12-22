@@ -42,10 +42,12 @@ const userSchema = new mongoose.Schema({
     },
     role: {
         type: String,
-        enum: ['user', 'agent', 'admin'],
+        enum: ['user', 'agent', 'admin', 'pro-admin'],
         default: 'user',
     },
-}, {
+    changePasswordAt: Date,
+    },
+    {
     toJSON: {
         transform(doc, ret) {
             if(ret.phoneNumber) {
@@ -70,6 +72,18 @@ userSchema.methods.correctPassword = async function(
     userPassword: string,
     ){
     return await bcrypt.compare(userPassword, candidatePassword);
+}
+
+userSchema.methods.changePasswordAfter = function (JWTTimeStamps: any) {
+    if(this.changePasswordAt) {
+        const changeTimestamp = parseInt (
+            String(this.changePasswordAt.getTime() / 1000),
+            10  
+        );
+        if (changeTimestamp > JWTTimeStamps) return true;
+    }
+
+    return false;
 }
 
 const User = mongoose.model('User', userSchema);

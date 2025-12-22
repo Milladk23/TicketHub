@@ -9,5 +9,7 @@ router.post('/login', userController.login)
 router.use(userController.protect);
 
 router.get('/getMe', userController.getMe);
+router.post('/updateMyPassword', userController.updateMyPassword);
+router.post('/updateMe', userController.updateMe);
 
 export default router;

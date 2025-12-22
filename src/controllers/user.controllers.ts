@@ -60,3 +60,36 @@ export const getMe = async (req: Request, res: Response, next: NextFunction) => 
         me,
     });
 };
+
+export const updateMyPassword = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+) => {
+    try {
+        await userServices.updateMyPassword((req as any).user.id, req.body);
+
+        res.status(200).json({
+            status: 'success',
+            message: 'Password has been updated succesfully',
+        });
+    } catch(err) {
+         res.status(400).json({
+            status: 'fail',
+            err,
+        });
+    }
+};
+
+export const updateMe = async (
+    req: Request,
+    res: Response,
+    nesxt: NextFunction,
+) => {
+    const me = await userServices.updateMe((req as any).user.id, req.body);
+
+    res.status(200).json({
+        status: 'success',
+        me,
+    });
+}
