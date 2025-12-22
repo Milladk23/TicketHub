@@ -71,3 +71,26 @@ export const login = async (data: {
 
     return createSendToken(user);
 }
+
+export const protect = async (token: any) => {
+    const secret = process.env.JWT_SECRET;
+    if (!secret) {
+        throw new Error('JWT_SECRET is not defined');
+    }
+
+    const decodedUser = jwt.verify(token, secret) as JwtPayload;
+
+    const user = await User.findById(decodedUser.id);
+
+    if(!user) {
+        throw new Error('The user blonging to this token does not exist anymore');
+    }
+
+    return user;
+}
+
+export const getMe = async (myID: any) => {
+    const me = await User.findById(myID);
+
+    return me;
+}

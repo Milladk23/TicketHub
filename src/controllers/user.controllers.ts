@@ -19,7 +19,6 @@ export const signup = async (req: Request, res: Response, next: NextFunction) =>
 }
 
 export const login = async (req: Request, res: Response, next: NextFunction) => {
-    console.log(req.body.username);
     const data = {
         username: req.body.username,
         password: req.body.password,
@@ -32,3 +31,32 @@ export const login = async (req: Request, res: Response, next: NextFunction) => 
         token,
     });
 }
+
+export const protect = async (req: Request, res: Response, next: NextFunction) => {
+    let token;
+    if(
+        req.headers.authorization &&
+        req.headers.authorization.startsWith('Bearer')
+    ) {
+        token = req.headers.authorization.split(' ')[1];
+    }
+
+    if(!token) {
+        throw new Error('You are not logged in');
+    }
+
+    const user = await userServices.protect(token);
+
+    (req as any).user = user;
+
+    next();
+}
+
+export const getMe = async (req: Request, res: Response, next: NextFunction) => {
+    const me = await userServices.getMe((req as any).user.id);
+
+    res.status(200).json({
+        status: 'success',
+        me,
+    });
+};
