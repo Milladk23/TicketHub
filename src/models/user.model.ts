@@ -38,12 +38,25 @@ const userSchema = new mongoose.Schema({
         type: String,
         minLength: [8, 'Password must have a 8 charracters or more'],
         required: [true, 'User must have a password'],
+        select: false,  
     },
     role: {
         type: String,
         enum: ['user', 'agent', 'admin'],
         default: 'user',
     },
+}, {
+    toJSON: {
+        transform(doc, ret) {
+            if(ret.phoneNumber) {
+                ret.phoneNumber = 
+                    ret.phoneNumber.slice(0, 3) +
+                    '****' +
+                    ret.phoneNumber.slice(-3);
+            }
+        }
+    },
+    timestamps: true,
 });
 
 userSchema.pre('save', async function() {
