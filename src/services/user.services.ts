@@ -1,5 +1,6 @@
 import jwt, { SignOptions } from 'jsonwebtoken';
 import User from '../models/user.model';
+import { sendEmail } from '../utils/email';
 
 const fillterObj = (
     obj: any,
@@ -33,7 +34,6 @@ export const signup = async (data: {
     firstName: string,
     lastName: string,
     username: string,
-    phoneNumber: string,
     password: string,
     email?: string,
     passwordConfirm: string
@@ -43,8 +43,7 @@ export const signup = async (data: {
         !data.lastName ||
         !data.username || 
         !data.password ||
-        !data.passwordConfirm || 
-        !data.phoneNumber
+        !data.passwordConfirm
     ) {
         throw new Error('Please fill all the required fields');
     }
@@ -56,7 +55,6 @@ export const signup = async (data: {
         firstName: data.firstName,
         lastName: data.lastName,
         username: data.username,
-        phoneNumber: data.phoneNumber,
         password: data.password
     });
 
@@ -123,7 +121,7 @@ export const updateMyPassword = async (myID: any, data: {
     }
 
     me.password = data.newPassword;
-    me.changePasswordAt = Date.now();
+    (me as any).changePasswordAt = Date.now();
 
     await me.save();
 
@@ -133,7 +131,6 @@ export const updateMyPassword = async (myID: any, data: {
 export const updateMe = async (myID: any, data: {
     username?: string,
     email?: string,
-    phoneNumber?: string,
     firstName?: string,
     lastName?: string,
     password?: string,
@@ -141,13 +138,15 @@ export const updateMe = async (myID: any, data: {
     if(data.password) {
         throw new Error('For updating you password please use /updateMtPassword');
     }
+    if(data.email) {
+        throw new Error('For updating you email please use /emailVerification');
+    }
 
     const newData: any = fillterObj(
         data,
         'username',
         'firstName',
         'lastName',
-        'phoneNumber',
         'email',
     );
 
@@ -157,4 +156,42 @@ export const updateMe = async (myID: any, data: {
     }); 
 
     return me;
+}
+
+export const verifyingEmailRequest = async (email: any) => {
+    const code = Math.floor(100000 + Math.random() * 900000);
+    const token = jwt.sign(
+        { email: email, code },
+        process.env.JWT_SECRET!,
+        { expiresIn: '5m'}
+    );
+
+    await sendEmail(
+        email,
+        'Email Verifiacation',
+        `Please enter this number to verify your email
+        ${code}`,
+    );
+
+    return token;
+};
+
+export const verifyEmailCode = async (token: any, code: number, userID: any) => {
+    try {
+        console.log(token);
+        const decoded: any = jwt.verify(token, process.env.JWT_SECRET!);
+        console.log(decoded.code, code);
+        if(String(decoded.code) !== String(code)) return false;
+
+        const user = await User.findById(userID);
+
+        if(!user) return false;
+
+        user.email = decoded.email;
+        user.isEmailVerified = true;
+        await (user as any).save();
+        return true;
+    } catch (err) {
+        return false;
+    }
 }

@@ -8,7 +8,6 @@ export const signup = async (req: Request, res: Response, next: NextFunction) =>
         username: req.body.username,
         password: req.body.password,
         passwordConfirm: req.body.passwordConfirm,
-        phoneNumber: req.body.phoneNumber,
     }
     const token = await userServices.signup(data);
 
@@ -84,7 +83,7 @@ export const updateMyPassword = async (
 export const updateMe = async (
     req: Request,
     res: Response,
-    nesxt: NextFunction,
+    next: NextFunction,
 ) => {
     const me = await userServices.updateMe((req as any).user.id, req.body);
 
@@ -93,3 +92,38 @@ export const updateMe = async (
         me,
     });
 }
+
+export const verifyingEmailRequest = async (
+    req: Request,
+    res: Response,
+    next: NextFunction,
+) => {
+    const token = await userServices.verifyingEmailRequest(req.body.email);
+
+    res.status(200).json({
+        status: 'success',
+        message: 'use this route to enter the code and verify your email',
+        token,
+    });
+}
+
+export const verifyEmailCode = async (
+    req: Request,
+    res: Response,
+    next: NextFunction,
+) => {
+    const token = decodeURIComponent(req.params.token);
+    const result = await userServices.verifyEmailCode(token, req.body.code, (req as any).user.id);
+    if(result) {
+        res.status(200).json({
+            status: 'success',
+            message: 'Your email has been verified successfully',
+        });
+    }
+    else {
+        res.status(500).json({
+            status: 'fail',
+            message: 'sth went wrong',
+        }); 
+    }
+};

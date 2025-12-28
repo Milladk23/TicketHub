@@ -12,4 +12,7 @@ router.get('/getMe', userController.getMe);
 router.post('/updateMyPassword', userController.updateMyPassword);
 router.post('/updateMe', userController.updateMe);
 
+router.post('/verfyingEmailRequest', userController.verifyingEmailRequest);
+router.post('/verfyingEmail/:token', userController.verifyEmailCode);
+
 export default router;
