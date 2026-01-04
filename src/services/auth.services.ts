@@ -1,6 +1,7 @@
 import jwt, { SignOptions } from 'jsonwebtoken';
 import User from '../models/user.model';
 import { sendEmail } from '../utils/email';
+import crypto from  'crypto';
 
 const fillterObj = (
     obj: any,
@@ -195,3 +196,68 @@ export const verifyEmailCode = async (token: any, code: number, userID: any) => 
         return false;
     }
 }
+
+export const forgotMyPassword = async (username: string, url: string) => {
+    const user = await User.findOne({ username });
+    if(!user) {
+        throw new Error('There is no user with this username.')
+    }
+    const resetToken = (user as any).generateResetPasswordToken();
+    const resetURL = `${url}/${resetToken}`;
+    await user.save({ validateBeforeSave: false });
+
+    try{
+        await sendEmail(
+        (user as any).email,
+        'Password Reset',
+        `For resetting your password open this Url
+        ${resetURL}`,
+    );
+
+    return true;
+    } catch (err) {
+        user.passwordResetToken = undefined;
+        user.passwordResetExpires = undefined;
+        await user.save({ validateBeforeSave: false });
+
+        return false;
+    }
+}
+
+export const resetPassword = async (
+    token: string,
+    password: string,
+    passwordConfirm: string
+) => {
+    const hashedToken = crypto
+        .createHash('sha256')
+        .update(token)
+        .digest('hex');
+    
+    const user = await User.findOne({
+        passwordResetToken: hashedToken,
+        passwordResetExpires: { $gt: Date.now() }
+    });
+
+    if(!user) {
+        throw new Error('Invalid or expired token');
+    }
+
+    if(!(password === passwordConfirm)) {
+        throw new Error('Passwords are not the same');
+    }
+    user.password = password;
+    user.passwordResetToken = undefined;
+    user.passwordResetExpires = undefined;
+    await user.save();
+
+    return createSendToken(user);
+};
+
+export const restrictTo = async (roles: [string], user: any) => {
+    if(roles.includes((user as any).role)) {
+        return true;
+    }
+    return false;
+};;
+

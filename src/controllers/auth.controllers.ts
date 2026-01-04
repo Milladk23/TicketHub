@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import * as userServices from '../services/user.services';
+import * as authServices from '../services/auth.services';
 
 export const signup = async (req: Request, res: Response, next: NextFunction) => {
     const data = {
@@ -9,7 +9,7 @@ export const signup = async (req: Request, res: Response, next: NextFunction) =>
         password: req.body.password,
         passwordConfirm: req.body.passwordConfirm,
     }
-    const token = await userServices.signup(data);
+    const token = await authServices.signup(data);
 
     res.status(200).json({
         status: 'succes',
@@ -23,7 +23,7 @@ export const login = async (req: Request, res: Response, next: NextFunction) => 
         password: req.body.password,
     }
 
-    const token = await userServices.login(data);
+    const token = await authServices.login(data);
 
     res.status(200).json({
         status: 'succes',
@@ -44,15 +44,15 @@ export const protect = async (req: Request, res: Response, next: NextFunction) =
         throw new Error('You are not logged in');
     }
 
-    const user = await userServices.protect(token);
+    const user = await authServices.protect(token);
 
-    (req as any).user = user;
+    req.user = user;
 
     next();
 }
 
 export const getMe = async (req: Request, res: Response, next: NextFunction) => {
-    const me = await userServices.getMe((req as any).user.id);
+    const me = await authServices.getMe(req.user?.id);
 
     res.status(200).json({
         status: 'success',
@@ -66,7 +66,7 @@ export const updateMyPassword = async (
     next: NextFunction
 ) => {
     try {
-        await userServices.updateMyPassword((req as any).user.id, req.body);
+        await authServices.updateMyPassword(req.user?.id, req.body);
 
         res.status(200).json({
             status: 'success',
@@ -85,7 +85,7 @@ export const updateMe = async (
     res: Response,
     next: NextFunction,
 ) => {
-    const me = await userServices.updateMe((req as any).user.id, req.body);
+    const me = await authServices.updateMe(req.user?.id, req.body);
 
     res.status(200).json({
         status: 'success',
@@ -98,7 +98,7 @@ export const verifyingEmailRequest = async (
     res: Response,
     next: NextFunction,
 ) => {
-    const token = await userServices.verifyingEmailRequest(req.body.email);
+    const token = await authServices.verifyingEmailRequest(req.body.email);
 
     res.status(200).json({
         status: 'success',
@@ -113,7 +113,7 @@ export const verifyEmailCode = async (
     next: NextFunction,
 ) => {
     const token = decodeURIComponent(req.params.token);
-    const result = await userServices.verifyEmailCode(token, req.body.code, (req as any).user.id);
+    const result = await authServices.verifyEmailCode(token, req.body.code, req.user?.id);
     if(result) {
         res.status(200).json({
             status: 'success',
@@ -127,3 +127,54 @@ export const verifyEmailCode = async (
         }); 
     }
 };
+
+export const forgottPassword = async (
+    req: Request,
+    res: Response,
+    next: NextFunction,
+) => {
+    const url = `${req.protocol}://${req.get('host')}/api/v1/users/resetPassword`;
+    const result: boolean = await authServices.forgotMyPassword(req.body.username, url);
+    if(result) {
+        res.status(200).json({
+            status: 'success',
+            message: 'Url has been sent to your Email please use it to reset your password',
+        });
+    }else {
+        res.status(500).json({
+            status: 'fail',
+            message: 'something went wrong',
+        });
+    }
+}
+
+export const resetPassword = async (
+    req: Request,
+    res: Response,
+    next: NextFunction,
+) => {
+    const resetToken = decodeURIComponent(req.params.token);
+    const token = await authServices.resetPassword(
+        resetToken,
+        req.body.password,
+        req.body.passwordConfirm,
+    );
+    res.status(200).json({
+        status: 'succes',
+        token,
+    });
+}
+
+export const restrictTo = (...roles: [string]) => {
+    return (
+        req: Request,
+        res: Response,
+        next: NextFunction,
+    ) => {
+        if(!authServices.restrictTo(roles, req.user)){
+            throw new Error('You do not the premission');
+        }
+
+        next();
+    }
+}

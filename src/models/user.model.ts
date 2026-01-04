@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 import validator from 'validator';
 import bcrypt from 'bcrypt';
+import crypto from  'crypto';
 
 const userSchema = new mongoose.Schema({
     firstName: {
@@ -33,6 +34,8 @@ const userSchema = new mongoose.Schema({
         required: [true, 'User must have a password'],
         select: false,  
     },
+    passwordResetToken: String,
+  passwordResetExpires: Date,
     role: {
         type: String,
         enum: ['user', 'agent', 'admin', 'pro-admin'],
@@ -41,18 +44,9 @@ const userSchema = new mongoose.Schema({
     changePasswordAt: Date,
     },
     {
-    toJSON: {
-        transform(doc, ret) {
-            if(ret.phoneNumber) {
-                ret.phoneNumber = 
-                    ret.phoneNumber.slice(0, 3) +
-                    '****' +
-                    ret.phoneNumber.slice(-3);
-            }
-        }
-    },
     timestamps: true,
-});
+    }
+);
 
 userSchema.pre('save', async function() {
     if(!this.isModified('password')) return ;
@@ -77,6 +71,18 @@ userSchema.methods.changePasswordAfter = function (JWTTimeStamps: any) {
     }
 
     return false;
+}
+
+userSchema.methods.generateResetPasswordToken = function() {
+    const resetToken = crypto.randomBytes(32).toString('hex');
+
+    this.passwordResetToken = crypto
+        .createHash('sha256')
+        .update(resetToken)
+        .digest('hex');
+    this.passwordResetExpires = Date.now() + 10 * 60 * 1000;
+
+    return resetToken;
 }
 
 const User = mongoose.model('User', userSchema);
