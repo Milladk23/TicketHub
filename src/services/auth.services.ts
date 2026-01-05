@@ -1,19 +1,8 @@
-import jwt, { SignOptions } from 'jsonwebtoken';
+import jwt, { JwtHeader, JwtPayload, SignOptions } from 'jsonwebtoken';
 import User from '../models/user.model';
 import { sendEmail } from '../utils/email';
 import crypto from  'crypto';
-
-const fillterObj = (
-    obj: any,
-    ...allowedFields: string[]
-) => {
-    const newObj: any = {};
-    Object.keys(obj).forEach(el => {
-        if(allowedFields.includes(el)) newObj[el] = obj[el];
-    })
-
-    return newObj;
-}
+import fillterObj from '../utils/fillterObj';
 
 const signToken = (id: any) => {
     const secret = process.env.JWT_SECRET;
@@ -79,13 +68,13 @@ export const login = async (data: {
     return createSendToken(user);
 }
 
-export const protect = async (token: any) => {
+export const protect = async (token: string) => {
     const secret = process.env.JWT_SECRET;
     if (!secret) {
         throw new Error('JWT_SECRET is not defined');
     }
 
-    const decodedUser: any = jwt.verify(token, secret);
+    const decodedUser: any = jwt.verify(token, secret) as JwtPayload;
 
     const user = await User.findById(decodedUser.id);
 
