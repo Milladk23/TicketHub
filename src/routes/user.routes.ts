@@ -1,4 +1,5 @@
 import * as authController from '../controllers/auth.controllers';
+import * as userController from '../controllers/user.controllers';
 import { Router } from 'express';
 
 const router = Router();
@@ -16,5 +17,18 @@ router.patch('/updateMe', authController.updateMe);
 
 router.post('/verfyingEmailRequest', authController.verifyingEmailRequest);
 router.post('/verfyingEmail/:token', authController.verifyEmailCode);
+
+router.use(authController.restrictTo('admin'));
+
+router
+    .route('/')
+    .get(userController.getAllUsers)
+    .post(userController.creatUser);
+router
+    .route('/:id')
+    .get(userController.getUser)
+    .delete(userController.deleteUser);
+
+router.patch('/promotingToAgent/:id', userController.promotingToAgent); 
 
 export default router;

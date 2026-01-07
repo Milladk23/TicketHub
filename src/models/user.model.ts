@@ -26,6 +26,7 @@ const userSchema = new mongoose.Schema({
         trim: true,
         validate: [validator.isEmail, 'Please enter real email'],
         lowercase: true,
+        sparse: true,
     },
     isEmailVerified: Boolean,
     password: {
@@ -38,7 +39,7 @@ const userSchema = new mongoose.Schema({
   passwordResetExpires: Date,
     role: {
         type: String,
-        enum: ['user', 'agent', 'admin', 'pro-admin'],
+        enum: ['user', 'agent', 'admin'],
         default: 'user',
     },
     changePasswordAt: Date,
